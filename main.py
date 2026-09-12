@@ -96,3 +96,9 @@ async def on_guild_update(before: discord.Guild, after: discord.Guild):
 # Web sunucusunu başlat ve botu çalıştır
 keep_alive()
 bot.run(os.getenv("BOT_TOKEN"))
+# Bot Ayarları
+intents = discord.Intents.default()
+intents.guilds = True
+intents.members = True
+intents.message_content = True  # <--- Bunu eklemezsen bot mesajları ve komutları okuyamaz!
+intents.moderation = True
