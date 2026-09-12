@@ -12,23 +12,16 @@ app = Flask('')
 def home():
     return "Guard Bot aktif ve çalışıyor!"
 
-def run():
-    app.run(host='0.0.0.0', port=8080)
-
-def keep_alive():
-    t = Thread(target=run)
-    t.start()
-
 # Bot Ayarları
 intents = discord.Intents.default()
 intents.guilds = True
 intents.members = True
+intents.message_content = True  # Komutların çalışması için gerekli
 intents.moderation = True # Sunucu güncelleme ve ban yetkileri için gerekli
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # Güvenli Liste (Whitelist) - Kullanıcı ID'lerini buraya ekleyebilirsin
-# Örnek: {123456789012345678, 987654321098765432}
 guvenli_liste = set()
 
 @bot.event
@@ -87,18 +80,19 @@ async def on_guild_update(before: discord.Guild, after: discord.Guild):
             # Güvenli listede değilse ve sahibi değilse ANINDA BANLA!
             try:
                 await after.ban(user, reason="Guard: Yetkisiz özel davet (vanity URL) değişimi!")
-                
-                # Log kanalına veya uygun bir yere bildirim atılabilir
                 print(f"🚨 TEHLİKE! {user} sunucu davetini değiştirdiği için banlandı!")
             except Exception as e:
                 print(f"Banlama sırasında hata oluştu: {e}")
 
-# Web sunucusunu başlat ve botu çalıştır
-keep_alive()
-bot.run(os.getenv("BOT_TOKEN"))
-# Bot Ayarları
-intents = discord.Intents.default()
-intents.guilds = True
-intents.members = True
-intents.message_content = True  # <--- Bunu eklemezsen bot mesajları ve komutları okuyamaz!
-intents.moderation = True
+# Web sunucusunu ve botu çakışmadan aynı anda çalıştıran kısım
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))
+    
+    def run_flask():
+        app.run(host='0.0.0.0', port=port)
+        
+    t = Thread(target=run_flask)
+    t.daemon = True
+    t.start()
+    
+    bot.run(os.getenv("BOT_TOKEN"))
